@@ -1,0 +1,42 @@
+SESSION18
+Bài 1 : Sự cố không truy cập được hệ thống quản trị
+
+Tên lớp: HCM K26 CNTT2
+Môn học: Nhập môn công nghệ thông tin
+Họ và tên: LƯƠNG THANH THƯ
+
+
+Phần 1. Phân tích
+Input: tên miền phong-dieu-phoi.greenlog.vn.
+Output: địa chỉ IP của máy chủ (ví dụ 203.0.113.25).
+Luồng DNS Lookup (giống tra số trong danh bạ):
+Browser cache -> OS cache/file hosts (kiểm tra xem đã biết IP chưa).
+DNS Resolver của nhà mạng (nhân viên tổng đài đi tra giúp).
+Root Server -> chỉ sang máy chủ .vn.
+TLD Server .vn -> chỉ sang máy chủ quản lý greenlog.vn.
+Authoritative Server -> trả IP thật.
+IP về browser -> browser kết nối tới máy chủ.
+
+Phân biệt lỗi:
+DNS (NXDOMAIN): lỗi xảy ra trước khi kết nối, không có mã HTTP, thường do phía Client (gõ sai tên).
+500: đã kết nối được, máy chủ xử lý bị hỏng, lỗi phía Server.
+Hậu quả gõ sai grenlog (thiếu chữ e):
+Với DNS, grenlog.vn và greenlog.vn là hai tên khác nhau hoàn toàn.
+Danh bạ không có tên này -> trả NXDOMAIN -> không có IP -> yêu cầu chưa tới máy chủ.
+Kết luận: Nam nói “máy chủ sập” là chưa có cơ sở.
+
+Phần 2. Triển khai – Kiểm tra HTTP Status Code
+Nhấn F12 -> tab Network, tích Preserve log.
+Gõ lại địa chỉ đúng, nhấn Enter.
+Quan sát: Không có request, báo ERR_NAME_NOT_RESOLVED -> lỗi DNS, chưa chạm máy chủ. Có cột Status (200, 404, 500…) -> yêu cầu đã tới máy chủ.
+Ý nghĩa mã:
+2xx: thành công.
+4xx: lỗi phía Client (sai đường dẫn, thiếu quyền).
+5xx: lỗi phía Server.
+Kiểm tra thêm: gõ nslookup phong-dieu-phoi.greenlog.vn trong Command Prompt (ra IP là DNS ổn).
+
+Phần 3. Kiểm thử – Đã sửa đúng tên nhưng vẫn 404
+DNS đã thành công và yêu cầu đã tới máy chủ.
+Máy chủ đang chạy bình thường (không sập), nhưng không tìm thấy trang được yêu cầu.
+Nguyên nhân có thể: Sai đường dẫn URL (ví dụ /admin nhưng thực tế là /quan-tri). Trang quản trị chưa deploy hoặc đã bị di chuyển. Web server chưa cấu hình cho tên miền phụ này.
+Cách xử lý: kiểm tra lại URL đầy đủ, báo IT kèm ảnh F12 có Status 404.
